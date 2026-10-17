@@ -306,7 +306,7 @@ Distributed under the **[MIT License](https://opensource.org/licenses/MIT)**. Se
 
 ## 🔗 Connect & Author
 
-**Harinarayana Avvari**
+
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Harinarayana%20Avvari-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/hari-narayana-035ba1389/)
 [![GitHub](https://img.shields.io/badge/GitHub-harinarayana1457--cmyk-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/harinarayana1457-cmyk)
