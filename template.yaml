@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  CartWeave — Alexa+ Multi-Brand Pantry, Meal-Plan & Grocery Arbitrage Concierge
+  Serverless MCP 2025-11-25 Streamable HTTP Server & Amazon Bedrock Orchestrator (AWS Builder Track)
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        NODE_ENV: production
+        MCP_PROTOCOL_VERSION: '2025-11-25'
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0'
+        USE_MOCK_BEDROCK: 'false'
+        SESSION_TABLE_NAME: !Ref CartWeaveSessionTable
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Default: us.anthropic.claude-3-5-sonnet-20241022-v2:0
+    AllowedValues:
+      - us.anthropic.claude-3-5-sonnet-20241022-v2:0
+      - amazon.nova-pro-v1:0
+    Description: Amazon Bedrock foundation model ID used by the CartWeave Converse API orchestrator.
+  UseMockBedrock:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable deterministic offline planner fallback when running without Bedrock model access.
+
+Resources:
+  CartWeaveHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Accept
+          - Mcp-Session-Id
+          - Authorization
+        ExposeHeaders:
+          - Mcp-Session-Id
+
+  CartWeaveMcpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: packages/mcp-server/
+      Handler: dist/index.handler
+      Description: MCP 2025-11-25 Streamable HTTP endpoint (POST/GET/DELETE /mcp) and Bedrock Agent orchestrator
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          USE_MOCK_BEDROCK: !Ref UseMockBedrock
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CartWeaveSessionTable
+        - Statement:
+            - Sid: AllowBedrockConverseInvocation
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
+      Events:
+        McpPostRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CartWeaveHttpApi
+            Path: /mcp
+            Method: POST
+        McpGetRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CartWeaveHttpApi
+            Path: /mcp
+            Method: GET
+        McpDeleteRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CartWeaveHttpApi
+            Path: /mcp
+            Method: DELETE
+        AgentChatRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CartWeaveHttpApi
+            Path: /agent/chat
+            Method: POST
+        HealthRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CartWeaveHttpApi
+            Path: /health
+            Method: GET
+
+  CartWeaveSessionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CartWeaveMcpSessions
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+
+Outputs:
+  McpStreamableHttpEndpoint:
+    Description: MCP 2025-11-25 Streamable HTTP Endpoint URL for Alexa+ Add-On Registration
+    Value: !Sub 'https://${CartWeaveHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/mcp'
+  AgentOrchestratorEndpoint:
+    Description: Bedrock Converse Agent Chat Endpoint
+    Value: !Sub 'https://${CartWeaveHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/agent/chat'
+  SessionTableName:
+    Description: DynamoDB table storing stateful Mcp-Session-Id contexts
+    Value: !Ref CartWeaveSessionTable

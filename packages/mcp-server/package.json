@@ -1,0 +1,27 @@
+{
+  "name": "@cartweave/mcp-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CartWeave MCP 2025-11-25 Streamable HTTP Server & Amazon Bedrock Converse Orchestrator",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test:mcp": "tsx src/test/verifyMcpSpec.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.700.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

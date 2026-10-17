@@ -1,0 +1,21 @@
+{
+  "name": "cartweave-alexa-plus-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CartWeave — Alexa+ Multi-Brand Pantry, Meal-Plan & Grocery Arbitrage Concierge built on MCP 2025-11-25 Streamable HTTP and Amazon Bedrock",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n MCP,SIMULATOR -c cyan,blue \"npm run dev --workspace=packages/mcp-server\" \"npm run dev --workspace=packages/alexa-plus-simulator\"",
+    "dev:mcp": "npm run dev --workspace=packages/mcp-server",
+    "dev:sim": "npm run dev --workspace=packages/alexa-plus-simulator",
+    "build": "npm run build --workspace=packages/mcp-server && npm run build --workspace=packages/alexa-plus-simulator",
+    "test:mcp": "npm run test:mcp --workspace=packages/mcp-server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}
