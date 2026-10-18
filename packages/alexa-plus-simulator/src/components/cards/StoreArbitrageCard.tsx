@@ -8,8 +8,11 @@ import {
   CheckCircle2,
   ArrowRight,
   Tag,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 import type { StoreComparisonState } from '@/lib/mcpHttpClient';
+import { Badge, Button, cx, usd, WidgetHeader } from '../ui';
 
 interface StoreArbitrageCardProps {
   title: string;
@@ -37,33 +40,33 @@ export function StoreArbitrageCard({
   return (
     <div className="space-y-4">
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-slate-900/90 via-cyan-950/40 to-slate-900/90 p-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-cyan-400" />
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <span className="rounded-full bg-cyan-500/15 px-2.5 py-0.5 text-xs font-medium text-cyan-300 border border-cyan-500/30">
-              STORE_ARBITRAGE_TABLE
-            </span>
+      <WidgetHeader
+        icon={<Scale className="h-6 w-6" />}
+        tone="brand"
+        title={title}
+        subtitle={subtitle}
+        widgetType="STORE_ARBITRAGE_TABLE"
+        actions={
+          <div className="flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-1.5 ring-1 ring-inset ring-white/10">
+            <Clock aria-hidden="true" className="h-4 w-4 text-cyan-300" />
+            <label htmlFor="delivery-slot-select" className="text-xs font-medium text-fg-muted">
+              Delivery window
+            </label>
+            <select
+              id="delivery-slot-select"
+              value={selectedSlot}
+              onChange={(e) => setSelectedSlot(e.target.value)}
+              className="min-h-8 rounded-lg bg-surface px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-white/10 focus:outline-none"
+            >
+              <option value="6:00 PM – 7:00 PM">6:00 PM – 7:00 PM (Tonight)</option>
+              <option value="7:00 PM – 8:00 PM">7:00 PM – 8:00 PM (Tonight)</option>
+              <option value="Tomorrow 8:00 AM – 10:00 AM">
+                Tomorrow 8:00 AM – 10:00 AM
+              </option>
+            </select>
           </div>
-          <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Delivery Slot:</span>
-          <select
-            value={selectedSlot}
-            onChange={(e) => setSelectedSlot(e.target.value)}
-            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-cyan-400 focus:outline-none"
-          >
-            <option value="6:00 PM – 7:00 PM">6:00 PM – 7:00 PM (Tonight)</option>
-            <option value="7:00 PM – 8:00 PM">7:00 PM – 8:00 PM (Tonight)</option>
-            <option value="Tomorrow 8:00 AM – 10:00 AM">
-              Tomorrow 8:00 AM – 10:00 AM
-            </option>
-          </select>
-        </div>
-      </div>
+        }
+      />
 
       {/* 3 Retailer Summary Cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -73,66 +76,74 @@ export function StoreArbitrageCard({
           return (
             <div
               key={store.storeId}
-              className={`flex flex-col justify-between rounded-2xl border p-4 transition ${
-                isRecommended
-                  ? 'border-cyan-400/60 bg-gradient-to-b from-cyan-950/40 via-slate-900/90 to-slate-900/90 shadow-lg shadow-cyan-500/10'
-                  : 'border-slate-800 bg-slate-900/70'
-              }`}
+              className={cx(
+                'glass relative flex flex-col justify-between overflow-hidden rounded-3xl p-5 transition-[border-color,box-shadow] duration-200',
+                isRecommended && 'border-cyan-400/50 bg-cyan-500/[0.06] shadow-glow'
+              )}
             >
               <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-base font-bold text-white">
-                    {store.storeName}
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold tracking-tight text-white">
+                      {store.storeName}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-fg-muted">{store.tagline}</p>
+                  </div>
                   {store.badge && (
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                        isRecommended
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                          : 'bg-slate-800 text-slate-300'
-                      }`}
-                    >
+                    <Badge tone={isRecommended ? 'brand' : 'neutral'}>
+                      {isRecommended && <Sparkles aria-hidden="true" className="h-3 w-3" />}
                       {store.badge}
-                    </span>
+                    </Badge>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-slate-400">{store.tagline}</p>
 
-                <div className="mt-3 space-y-1 border-t border-slate-800/80 pt-2.5 text-xs">
-                  <div className="flex justify-between text-slate-300">
-                    <span>Items Subtotal:</span>
-                    <span>${store.subtotalUsd.toFixed(2)}</span>
+                {/* Big Out-of-Pocket Hero Price */}
+                <div className="mt-4 flex items-baseline justify-between rounded-2xl bg-white/[0.04] px-3.5 py-3 ring-1 ring-inset ring-white/[0.06]">
+                  <span className="text-xs font-medium text-fg-muted">Out-of-pocket</span>
+                  <span
+                    className={cx(
+                      'tabular text-2xl font-extrabold tracking-tight',
+                      isRecommended ? 'text-cyan-300' : 'text-white'
+                    )}
+                  >
+                    {usd(store.totalOutOfPocketUsd)}
+                  </span>
+                </div>
+
+                <dl className="mt-3 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-fg-muted">
+                    <dt>Items subtotal</dt>
+                    <dd className="tabular font-medium text-slate-200">
+                      {usd(store.subtotalUsd)}
+                    </dd>
                   </div>
-                  <div className="flex justify-between text-emerald-400">
-                    <span>Prime Member Savings:</span>
-                    <span>-${store.primeDiscountUsd.toFixed(2)}</span>
+                  <div className="flex justify-between text-emerald-300">
+                    <dt>Prime member savings</dt>
+                    <dd className="tabular font-semibold">-{usd(store.primeDiscountUsd)}</dd>
                   </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span>Delivery Fee:</span>
-                    <span>
+                  <div className="flex justify-between text-fg-muted">
+                    <dt>Delivery fee</dt>
+                    <dd className="tabular font-medium text-slate-200">
                       {store.deliveryFeeUsd === 0
                         ? 'FREE (Prime)'
-                        : `$${store.deliveryFeeUsd.toFixed(2)}`}
-                    </span>
+                        : usd(store.deliveryFeeUsd)}
+                    </dd>
                   </div>
-                  <div className="flex justify-between border-t border-slate-800 pt-1.5 text-sm font-bold text-white">
-                    <span>Total Out-of-Pocket:</span>
-                    <span className="text-cyan-400">
-                      ${store.totalOutOfPocketUsd.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
+                </dl>
               </div>
 
-              <div className="mt-3 pt-2">
-                <div className="mb-2 flex items-center gap-1 text-[11px] text-slate-400">
-                  <Truck className="h-3.5 w-3.5 text-cyan-400" />
-                  Window: {selectedSlot}
+              <div className="mt-4 border-t border-white/[0.06] pt-3">
+                <div className="mb-2.5 flex items-center gap-1.5 text-xs text-fg-muted">
+                  <Truck aria-hidden="true" className="h-3.5 w-3.5 text-cyan-300" />
+                  <span>Window: {selectedSlot}</span>
                 </div>
 
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant={isRecommended ? 'primary' : 'secondary'}
+                  fullWidth
                   disabled={isBusy}
+                  trailingIcon={<ArrowRight className="h-4 w-4" />}
                   onClick={() =>
                     onExecuteTool(
                       'checkout_smart_basket',
@@ -144,15 +155,9 @@ export function StoreArbitrageCard({
                       `One-Tap Checkout ${store.storeName} (${selectedSlot})`
                     )
                   }
-                  className={`w-full flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${
-                    isRecommended
-                      ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-md shadow-cyan-500/20 hover:opacity-95'
-                      : 'border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                  }`}
                 >
-                  One-Tap Checkout • ${store.totalOutOfPocketUsd.toFixed(2)}
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
+                  Checkout · <span className="tabular">{usd(store.totalOutOfPocketUsd)}</span>
+                </Button>
               </div>
             </div>
           );
@@ -160,106 +165,119 @@ export function StoreArbitrageCard({
       </div>
 
       {/* Arbitrage Insight Callout */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-4 py-2.5 text-xs text-emerald-200">
-        <div className="flex items-center gap-2">
-          <Award className="h-4 w-4 text-emerald-400 shrink-0" />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-100">
+        <div className="flex items-center gap-2.5">
+          <Award aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-300" />
           <span>{comparison.hybridSplitSummary.explanation}</span>
         </div>
-        <span className="font-semibold text-emerald-300">
-          Hybrid Floor: ${comparison.hybridSplitSummary.totalHybridUsd.toFixed(2)}
-        </span>
+        <Badge tone="success" mono>
+          Hybrid floor: {usd(comparison.hybridSplitSummary.totalHybridUsd)}
+        </Badge>
       </div>
 
       {/* Item-by-Item Arbitrage Matrix */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/75">
-        <table className="w-full text-left text-xs">
+      <div className="glass overflow-x-auto rounded-3xl">
+        <table className="w-full text-left text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400">
-              <th className="py-2.5 px-3 font-semibold">Missing Ingredient</th>
-              <th className="py-2.5 px-3 font-semibold text-cyan-300">
+            <tr className="border-b border-white/[0.08] bg-white/[0.03] text-xs uppercase tracking-wider text-fg-muted">
+              <th scope="col" className="px-4 py-3 font-semibold">
+                Missing ingredient
+              </th>
+              <th scope="col" className="px-4 py-3 font-semibold text-cyan-300">
                 Amazon Fresh (Prime)
               </th>
-              <th className="py-2.5 px-3 font-semibold text-emerald-300">
+              <th scope="col" className="px-4 py-3 font-semibold text-emerald-300">
                 Whole Foods Market
               </th>
-              <th className="py-2.5 px-3 font-semibold text-amber-300">
+              <th scope="col" className="px-4 py-3 font-semibold text-amber-300">
                 Local Co-op
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/70">
+          <tbody className="divide-y divide-white/[0.06]">
             {comparison.itemRows.map((row) => (
-              <tr key={row.ingredientName} className="hover:bg-slate-800/40">
-                <td className="py-2.5 px-3 font-medium text-white">
+              <tr
+                key={row.ingredientName}
+                className="transition-colors hover:bg-white/[0.03]"
+              >
+                <th scope="row" className="px-4 py-3 font-semibold text-white">
                   <div>{row.ingredientName}</div>
                   {row.amazonFreshNote && (
-                    <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-cyan-300">
-                      <Tag className="h-2.5 w-2.5" />
+                    <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-cyan-400/10 px-2 py-0.5 text-[11px] font-medium text-cyan-200 ring-1 ring-inset ring-cyan-400/20">
+                      <Tag aria-hidden="true" className="h-3 w-3" />
                       {row.amazonFreshNote}
                     </div>
                   )}
+                </th>
+                <td className="px-4 py-3">
+                  <PriceCell
+                    price={row.amazonFreshPriceUsd}
+                    brand={row.amazonFreshBrand}
+                    size={row.amazonFreshSize}
+                    isLowest={row.lowestStoreId === 'amazon-fresh'}
+                    lowestTone="text-cyan-300"
+                  />
                 </td>
-                <td className="py-2.5 px-3">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`font-bold ${
-                        row.lowestStoreId === 'amazon-fresh'
-                          ? 'text-cyan-400'
-                          : 'text-slate-200'
-                      }`}
-                    >
-                      ${row.amazonFreshPriceUsd.toFixed(2)}
-                    </span>
-                    {row.lowestStoreId === 'amazon-fresh' && (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    {row.amazonFreshBrand} ({row.amazonFreshSize})
-                  </div>
+                <td className="px-4 py-3">
+                  <PriceCell
+                    price={row.wholeFoodsPriceUsd}
+                    brand={row.wholeFoodsBrand}
+                    size={row.wholeFoodsSize}
+                    isLowest={row.lowestStoreId === 'whole-foods'}
+                    lowestTone="text-emerald-300"
+                  />
                 </td>
-                <td className="py-2.5 px-3">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`font-bold ${
-                        row.lowestStoreId === 'whole-foods'
-                          ? 'text-emerald-400'
-                          : 'text-slate-200'
-                      }`}
-                    >
-                      ${row.wholeFoodsPriceUsd.toFixed(2)}
-                    </span>
-                    {row.lowestStoreId === 'whole-foods' && (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    {row.wholeFoodsBrand} ({row.wholeFoodsSize})
-                  </div>
-                </td>
-                <td className="py-2.5 px-3">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`font-bold ${
-                        row.lowestStoreId === 'local-coop'
-                          ? 'text-amber-400'
-                          : 'text-slate-200'
-                      }`}
-                    >
-                      ${row.localCoopPriceUsd.toFixed(2)}
-                    </span>
-                    {row.lowestStoreId === 'local-coop' && (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    {row.localCoopBrand} ({row.localCoopSize})
-                  </div>
+                <td className="px-4 py-3">
+                  <PriceCell
+                    price={row.localCoopPriceUsd}
+                    brand={row.localCoopBrand}
+                    size={row.localCoopSize}
+                    isLowest={row.lowestStoreId === 'local-coop'}
+                    lowestTone="text-amber-300"
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function PriceCell({
+  price,
+  brand,
+  size,
+  isLowest,
+  lowestTone,
+}: {
+  price: number;
+  brand: string;
+  size: string;
+  isLowest: boolean;
+  lowestTone: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <span
+          className={cx(
+            'tabular text-sm font-bold',
+            isLowest ? lowestTone : 'text-slate-200'
+          )}
+        >
+          {usd(price)}
+        </span>
+        {isLowest && (
+          <>
+            <CheckCircle2 aria-hidden="true" className={cx('h-4 w-4', lowestTone)} />
+            <span className="sr-only">(lowest price)</span>
+          </>
+        )}
+      </div>
+      <div className="mt-0.5 text-xs text-fg-muted">
+        {brand} · {size}
       </div>
     </div>
   );

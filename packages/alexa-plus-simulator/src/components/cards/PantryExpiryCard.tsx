@@ -4,12 +4,17 @@ import React, { useState } from 'react';
 import {
   AlertTriangle,
   Clock,
-  PlusCircle,
   Sparkles,
   CheckCircle2,
   Refrigerator,
+  Package,
+  Flame,
+  Leaf,
+  Pin,
+  Filter,
 } from 'lucide-react';
 import type { PantryItem } from '@/lib/mcpHttpClient';
+import { Badge, Button, cx, StatTile, usd, WidgetHeader } from '../ui';
 
 interface PantryExpiryCardProps {
   title: string;
@@ -47,145 +52,147 @@ export function PantryExpiryCard({
   return (
     <div className="space-y-4">
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-slate-900/90 via-indigo-950/50 to-slate-900/90 p-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Refrigerator className="h-5 w-5 text-cyan-400" />
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <span className="rounded-full bg-cyan-500/15 px-2.5 py-0.5 text-xs font-medium text-cyan-300 border border-cyan-500/30">
-              PANTRY_EXPIRY_GRID
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => setFilterCriticalOnly((prev) => !prev)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-              filterCriticalOnly
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                : 'bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-800'
-            }`}
-          >
-            {filterCriticalOnly ? 'Showing <=48h Critical' : 'Filter <=48h Urgent'}
-          </button>
-
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() =>
-              onExecuteTool(
-                'generate_meal_plan',
-                {
-                  days: 3,
-                  maxBudgetUsd: 38,
-                  minProteinGramsPerMeal: 35,
-                  dietaryTags: ['vegetarian'],
-                  prioritizeExpiring: true,
-                },
-                'Plan 3 High-Protein Rescue Dinners (<$38)'
-              )
-            }
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Auto-Plan 3 Rescue Dinners
-          </button>
-        </div>
-      </div>
+      <WidgetHeader
+        icon={<Refrigerator className="h-6 w-6" />}
+        tone="brand"
+        title={title}
+        subtitle={subtitle}
+        widgetType="PANTRY_EXPIRY_GRID"
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant={filterCriticalOnly ? 'warningSoft' : 'secondary'}
+              aria-pressed={filterCriticalOnly}
+              disabled={isBusy}
+              onClick={() => setFilterCriticalOnly((prev) => !prev)}
+              icon={<Filter className="h-4 w-4" />}
+            >
+              {filterCriticalOnly ? 'Showing ≤48h' : 'Urgent only'}
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              loading={isBusy}
+              icon={<Sparkles className="h-4 w-4" />}
+              onClick={() =>
+                onExecuteTool(
+                  'generate_meal_plan',
+                  {
+                    days: 3,
+                    maxBudgetUsd: 38,
+                    minProteinGramsPerMeal: 35,
+                    dietaryTags: ['vegetarian'],
+                    prioritizeExpiring: true,
+                  },
+                  'Plan 3 High-Protein Rescue Dinners (<$38)'
+                )
+              }
+            >
+              Auto-plan 3 rescue dinners
+            </Button>
+          </>
+        }
+      />
 
       {/* KPI Metrics Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-          <div className="text-xs text-slate-400">Tracked Pantry Items</div>
-          <div className="mt-1 text-xl font-bold text-white">
-            {summaryMetrics.totalItemsCount}
-          </div>
-        </div>
-        <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-3">
-          <div className="text-xs text-rose-300">Critical (&le;36h)</div>
-          <div className="mt-1 text-xl font-bold text-rose-400">
-            {summaryMetrics.criticalExpiryCount} items
-          </div>
-        </div>
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3">
-          <div className="text-xs text-amber-300">Expiring (&le;72h)</div>
-          <div className="mt-1 text-xl font-bold text-amber-400">
-            {summaryMetrics.expiringWithin72hCount} items
-          </div>
-        </div>
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3">
-          <div className="text-xs text-emerald-300">At-Risk Waste Value</div>
-          <div className="mt-1 text-xl font-bold text-emerald-400">
-            ${summaryMetrics.atRiskValueUsd.toFixed(2)}
-          </div>
-        </div>
+        <StatTile
+          label="Tracked items"
+          value={summaryMetrics.totalItemsCount}
+          icon={<Package className="h-4 w-4" />}
+        />
+        <StatTile
+          label="Critical ≤36h"
+          value={summaryMetrics.criticalExpiryCount}
+          hint="use tonight"
+          tone="danger"
+          icon={<Flame className="h-4 w-4" />}
+        />
+        <StatTile
+          label="Expiring ≤72h"
+          value={summaryMetrics.expiringWithin72hCount}
+          hint="plan this week"
+          tone="warning"
+          icon={<Clock className="h-4 w-4" />}
+        />
+        <StatTile
+          label="At-risk value"
+          value={usd(summaryMetrics.atRiskValueUsd)}
+          hint="waste to rescue"
+          tone="success"
+          icon={<Leaf className="h-4 w-4" />}
+        />
       </div>
 
       {/* Pantry Grid */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {displayedItems.map((item) => {
           const isCritical = item.expiresInHours <= 36;
           const isWarning = item.expiresInHours > 36 && item.expiresInHours <= 72;
+          // Freshness meter: 0h → 0%, 120h+ → 100%
+          const freshnessPct = Math.max(4, Math.min(100, (item.expiresInHours / 120) * 100));
 
           return (
-            <div
+            <li
               key={item.id}
-              className={`flex flex-col justify-between rounded-xl border p-3.5 transition ${
-                isCritical
-                  ? 'border-rose-500/40 bg-gradient-to-br from-rose-950/30 via-slate-900/90 to-slate-900/90'
-                  : isWarning
-                  ? 'border-amber-500/35 bg-gradient-to-br from-amber-950/25 via-slate-900/90 to-slate-900/90'
-                  : 'border-slate-800 bg-slate-900/60'
-              }`}
+              className={cx(
+                'glass group relative flex flex-col justify-between overflow-hidden rounded-2xl p-4 transition-[border-color,background-color] duration-200',
+                isCritical && 'border-rose-400/30 bg-rose-500/[0.06]',
+                isWarning && 'border-amber-400/25 bg-amber-500/[0.04]'
+              )}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-white">{item.name}</span>
-                    <span className="rounded-md bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300">
-                      {item.category}
-                    </span>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-base font-semibold text-white">{item.name}</span>
+                    <Badge>{item.category}</Badge>
                   </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Qty:{' '}
-                    <span className="font-medium text-slate-200">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-fg-muted">
+                    <span className="tabular font-medium text-slate-200">
                       {item.quantity} {item.unit}
-                    </span>{' '}
-                    • {item.storageLocation} • Value:{' '}
-                    <span className="text-emerald-400">
-                      ${item.estimatedValueUsd.toFixed(2)}
                     </span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.storageLocation}</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="tabular text-emerald-300">{usd(item.estimatedValueUsd)}</span>
                   </div>
                 </div>
 
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    isCritical
-                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                      : isWarning
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                  }`}
-                >
+                <Badge tone={isCritical ? 'danger' : isWarning ? 'warning' : 'success'} className="tabular py-1">
                   {isCritical ? (
-                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
                   ) : isWarning ? (
-                    <Clock className="h-3.5 w-3.5" />
+                    <Clock aria-hidden="true" className="h-3.5 w-3.5" />
                   ) : (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
                   {item.expiresInHours <= 72
                     ? `${item.expiresInHours}h left`
                     : `${Math.round(item.expiresInHours / 24)}d fresh`}
-                </span>
+                </Badge>
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-slate-800/80 pt-2.5">
-                <span className="text-[11px] text-slate-400">
+              {/* Freshness meter (redundant with text label — color is not the only signal) */}
+              <div
+                className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]"
+                role="meter"
+                aria-label={`${item.name} freshness`}
+                aria-valuemin={0}
+                aria-valuemax={120}
+                aria-valuenow={Math.min(120, item.expiresInHours)}
+              >
+                <div
+                  className={cx(
+                    'h-full rounded-full transition-[width] duration-500 ease-out-expo',
+                    isCritical ? 'bg-rose-400' : isWarning ? 'bg-amber-400' : 'bg-emerald-400'
+                  )}
+                  style={{ width: `${freshnessPct}%` }}
+                />
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/[0.06] pt-3">
+                <span className="text-xs text-fg-muted">
                   {isCritical
                     ? 'Urgent: Use tonight or tomorrow'
                     : isWarning
@@ -193,9 +200,12 @@ export function PantryExpiryCard({
                     : 'Stable pantry staple'}
                 </span>
 
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant="brandSoft"
                   disabled={isBusy}
+                  icon={<Pin className="h-3.5 w-3.5" />}
+                  aria-label={`Prioritize ${item.name} for immediate rescue`}
                   onClick={() =>
                     onExecuteTool(
                       'scan_pantry_inventory',
@@ -214,16 +224,14 @@ export function PantryExpiryCard({
                       `Prioritize ${item.name} for immediate rescue`
                     )
                   }
-                  className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50"
                 >
-                  <PlusCircle className="h-3 w-3" />
-                  Prioritize Item
-                </button>
+                  Prioritize
+                </Button>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

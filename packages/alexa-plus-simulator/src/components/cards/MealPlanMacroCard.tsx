@@ -9,8 +9,14 @@ import {
   ShoppingCart,
   Sparkles,
   Check,
+  Plus,
+  Wallet,
+  Leaf,
+  ArrowRightLeft,
+  Users,
 } from 'lucide-react';
 import type { ActiveMealPlan } from '@/lib/mcpHttpClient';
+import { Badge, Button, cx, StatTile, usd, WidgetHeader } from '../ui';
 
 interface MealPlanMacroCardProps {
   title: string;
@@ -40,232 +46,260 @@ export function MealPlanMacroCard({
   onExecuteTool,
   isBusy,
 }: MealPlanMacroCardProps) {
+  const budgetPct = Math.min(100, (mealPlan.totalEstimatedCostUsd / mealPlan.maxBudgetUsd) * 100);
+
   return (
     <div className="space-y-4">
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-slate-900/90 via-indigo-950/60 to-slate-900/90 p-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-indigo-400" />
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-300 border border-indigo-500/30">
-              MEAL_PLAN_MACRO_CARDS
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
-        </div>
-
-        <button
-          type="button"
-          disabled={isBusy}
-          onClick={() =>
-            onExecuteTool(
-              'compare_grocery_carts',
-              {
-                mealPlanId: mealPlan.mealPlanId,
-                missingIngredients: mealPlan.missingIngredients,
-                preferredDeliveryWindow: '6:00 PM – 7:00 PM',
-              },
-              'Compare 3 Retailers for Missing Ingredients'
-            )
-          }
-          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 hover:opacity-95 disabled:opacity-50"
-        >
-          <ShoppingCart className="h-3.5 w-3.5" />
-          Compare 3 Stores ({mealPlan.missingIngredients.length} Missing Items)
-        </button>
-      </div>
+      <WidgetHeader
+        icon={<Sparkles className="h-6 w-6" />}
+        tone="violet"
+        title={title}
+        subtitle={subtitle}
+        widgetType="MEAL_PLAN_MACRO_CARDS"
+        actions={
+          <Button
+            size="sm"
+            variant="primary"
+            loading={isBusy}
+            icon={<ShoppingCart className="h-4 w-4" />}
+            onClick={() =>
+              onExecuteTool(
+                'compare_grocery_carts',
+                {
+                  mealPlanId: mealPlan.mealPlanId,
+                  missingIngredients: mealPlan.missingIngredients,
+                  preferredDeliveryWindow: '6:00 PM – 7:00 PM',
+                },
+                'Compare 3 Retailers for Missing Ingredients'
+              )
+            }
+          >
+            Compare 3 stores · {mealPlan.missingIngredients.length} items
+          </Button>
+        }
+      />
 
       {/* Live Swap Notification Banner */}
       {swapHighlight && (
-        <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3.5 text-xs text-emerald-200 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <span className="font-semibold text-emerald-300">
-              Live MCP Constraint Swap Applied (Day {swapHighlight.dayIndex}):
-            </span>{' '}
-            Replaced <span className="line-through opacity-75">{swapHighlight.previousDishTitle}</span>{' '}
-            with <span className="font-semibold text-white">{swapHighlight.newDishTitle}</span>{' '}
-            [{swapHighlight.constraintApplied}]
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-50"
+        >
+          <div className="flex items-start gap-2.5">
+            <ArrowRightLeft aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+            <div>
+              <span className="font-semibold text-emerald-200">
+                Day {swapHighlight.dayIndex} swapped · {swapHighlight.constraintApplied}
+              </span>
+              <div className="mt-0.5 text-emerald-100/90">
+                <span className="line-through opacity-70">{swapHighlight.previousDishTitle}</span>
+                <span aria-hidden="true"> → </span>
+                <span className="sr-only"> replaced with </span>
+                <span className="font-semibold text-white">{swapHighlight.newDishTitle}</span>
+              </div>
+            </div>
           </div>
-          <div className="font-mono text-emerald-300">
-            {swapHighlight.caloriesDelta <= 0
-              ? `${swapHighlight.caloriesDelta} kcal`
-              : `+${swapHighlight.caloriesDelta} kcal`}{' '}
-            •{' '}
-            {swapHighlight.costDeltaUsd <= 0
-              ? `-$${Math.abs(swapHighlight.costDeltaUsd).toFixed(2)}`
-              : `+$${swapHighlight.costDeltaUsd.toFixed(2)}`}
+          <div className="flex items-center gap-2">
+            <Badge tone="success" mono>
+              {swapHighlight.caloriesDelta <= 0
+                ? `${swapHighlight.caloriesDelta} kcal`
+                : `+${swapHighlight.caloriesDelta} kcal`}
+            </Badge>
+            <Badge tone="success" mono>
+              {swapHighlight.costDeltaUsd <= 0
+                ? `-$${Math.abs(swapHighlight.costDeltaUsd).toFixed(2)}`
+                : `+$${swapHighlight.costDeltaUsd.toFixed(2)}`}
+            </Badge>
           </div>
         </div>
       )}
 
       {/* Macro Summary Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-          <div className="text-xs text-slate-400">Est. 3-Dinner Spend</div>
-          <div className="mt-1 text-xl font-bold text-cyan-400">
-            ${mealPlan.totalEstimatedCostUsd.toFixed(2)}{' '}
-            <span className="text-xs font-normal text-slate-400">
-              / ${mealPlan.maxBudgetUsd}
+        <StatTile
+          label="3-dinner spend"
+          tone="brand"
+          icon={<Wallet className="h-4 w-4" />}
+          value={usd(mealPlan.totalEstimatedCostUsd)}
+          hint={
+            <span className="block">
+              <span className="tabular">of ${mealPlan.maxBudgetUsd} budget</span>
+              <span className="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-white/[0.08]">
+                <span
+                  className="block h-full rounded-full bg-cyan-400"
+                  style={{ width: `${budgetPct}%` }}
+                />
+              </span>
             </span>
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-          <div className="text-xs text-slate-400">Avg Protein / Serving</div>
-          <div className="mt-1 text-xl font-bold text-indigo-400">
-            {mealPlan.averageProteinGrams}g{' '}
-            <span className="text-xs font-normal text-slate-400">
-              ({mealPlan.totalProteinGrams}g total)
-            </span>
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-          <div className="text-xs text-slate-400">Expiring Items Rescued</div>
-          <div className="mt-1 text-xl font-bold text-emerald-400">
-            {mealPlan.expiringItemsRescued.length} items
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
-          <div className="text-xs text-slate-400">Food Waste Avoided</div>
-          <div className="mt-1 text-xl font-bold text-emerald-400">
-            ${mealPlan.estimatedWasteSavedUsd.toFixed(2)}
-          </div>
-        </div>
+          }
+        />
+        <StatTile
+          label="Avg protein"
+          tone="violet"
+          icon={<Dumbbell className="h-4 w-4" />}
+          value={`${mealPlan.averageProteinGrams}g`}
+          hint={<span className="tabular">{mealPlan.totalProteinGrams}g total</span>}
+        />
+        <StatTile
+          label="Items rescued"
+          tone="success"
+          icon={<Leaf className="h-4 w-4" />}
+          value={mealPlan.expiringItemsRescued.length}
+          hint="expiring soon"
+        />
+        <StatTile
+          label="Waste avoided"
+          tone="success"
+          icon={<Sparkles className="h-4 w-4" />}
+          value={usd(mealPlan.estimatedWasteSavedUsd)}
+        />
       </div>
 
       {/* 3-Day Meal Cards */}
-      <div className="space-y-3">
+      <ol className="space-y-3">
         {mealPlan.meals.map((meal) => {
           const r = meal.recipe;
           const isSwappedDay = swapHighlight?.dayIndex === meal.dayIndex;
 
           return (
-            <div
+            <li
               key={`${meal.dayIndex}-${r.id}`}
-              className={`rounded-2xl border p-4 transition ${
-                isSwappedDay
-                  ? 'border-cyan-400/50 bg-gradient-to-r from-cyan-950/30 via-slate-900/90 to-slate-900/90'
-                  : 'border-slate-800 bg-slate-900/75'
-              }`}
+              className={cx(
+                'glass rounded-3xl p-5 transition-[border-color,box-shadow] duration-300',
+                isSwappedDay && 'border-cyan-400/40 shadow-glow'
+              )}
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-lg bg-indigo-500/20 px-2.5 py-0.5 text-xs font-semibold text-indigo-300 border border-indigo-500/30">
-                      {meal.dayLabel}
-                    </span>
-                    <span className="rounded-lg bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-300 border border-emerald-500/30">
-                      {r.badgeText}
-                    </span>
-                    {r.dietaryTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-md bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-4">
+                  <div
+                    aria-hidden="true"
+                    className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-indigo-400/15 ring-1 ring-inset ring-indigo-400/30"
+                  >
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200">Day</span>
+                    <span className="tabular text-xl font-extrabold leading-none text-white">{meal.dayIndex}</span>
                   </div>
-                  <h4 className="text-base font-bold text-white pt-1">{r.title}</h4>
-                  <p className="text-xs text-slate-300">{r.subtitle}</p>
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="sr-only">{meal.dayLabel}:</span>
+                      <Badge tone="success">{r.badgeText}</Badge>
+                      {r.dietaryTags.map((tag) => (
+                        <Badge key={tag}>{tag}</Badge>
+                      ))}
+                      {isSwappedDay && (
+                        <Badge tone="brand">
+                          <RefreshCw aria-hidden="true" className="h-3 w-3" /> Swapped
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold leading-snug tracking-tight text-white">{r.title}</h3>
+                    <p className="text-sm text-fg-muted">{r.subtitle}</p>
+                  </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-lg font-bold text-cyan-400">
-                    ${r.estimatedCostUsd.toFixed(2)}
-                  </div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="tabular text-2xl font-bold text-cyan-300">{usd(r.estimatedCostUsd)}</div>
+                  <div className="mt-0.5 flex items-center justify-end gap-1 text-xs text-fg-muted">
+                    <Users aria-hidden="true" className="h-3 w-3" />
                     {r.servings} servings
                   </div>
                 </div>
               </div>
 
               {/* Macros Bar */}
-              <div className="mt-3 flex flex-wrap items-center gap-4 rounded-xl bg-slate-950/60 px-3.5 py-2 text-xs">
-                <span className="flex items-center gap-1.5 font-semibold text-indigo-300">
-                  <Dumbbell className="h-3.5 w-3.5" />
-                  {r.proteinGrams}g Protein
-                </span>
-                <span className="flex items-center gap-1.5 text-amber-300">
-                  <Flame className="h-3.5 w-3.5" />
-                  {r.calories} kcal
-                </span>
-                <span className="text-slate-400">Carbs: {r.carbsGrams}g</span>
-                <span className="text-slate-400">Fat: {r.fatGrams}g</span>
-                <span className="flex items-center gap-1 text-slate-400">
-                  <Clock className="h-3.5 w-3.5" />
-                  {r.prepTimeMinutes}m prep
-                </span>
-              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <Macro icon={<Dumbbell className="h-3.5 w-3.5" />} label="Protein" value={`${r.proteinGrams}g`} tone="text-indigo-200" />
+                <Macro icon={<Flame className="h-3.5 w-3.5" />} label="Calories" value={`${r.calories}`} tone="text-amber-200" />
+                <Macro label="Carbs" value={`${r.carbsGrams}g`} />
+                <Macro label="Fat" value={`${r.fatGrams}g`} />
+                <Macro icon={<Clock className="h-3.5 w-3.5" />} label="Prep" value={`${r.prepTimeMinutes}m`} />
+              </dl>
 
               {/* Pantry Rescued vs Missing Store Ingredients */}
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 text-xs">
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/15 p-2.5">
-                  <div className="font-semibold text-emerald-300 mb-1">
-                    Pantry Items Used (Zero Cost):
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-emerald-500/[0.06] p-3 ring-1 ring-inset ring-emerald-400/15">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300">
+                    From your pantry · free
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <ul className="flex flex-wrap gap-1.5">
                     {r.pantryIngredientsUsed.map((ing) => (
-                      <span
-                        key={ing}
-                        className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-200"
-                      >
-                        <Check className="h-3 w-3" />
-                        {ing}
-                      </span>
+                      <li key={ing}>
+                        <Badge tone="success">
+                          <Check aria-hidden="true" className="h-3 w-3" />
+                          {ing}
+                        </Badge>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
 
-                <div className="rounded-lg border border-cyan-500/20 bg-cyan-950/15 p-2.5">
-                  <div className="font-semibold text-cyan-300 mb-1">
-                    Missing Store Ingredients:
+                <div className="rounded-2xl bg-cyan-500/[0.06] p-3 ring-1 ring-inset ring-cyan-400/15">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                    Need from store
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <ul className="flex flex-wrap gap-1.5">
                     {r.missingIngredients.map((ing) => (
-                      <span
-                        key={ing}
-                        className="rounded bg-cyan-500/15 px-2 py-0.5 text-[11px] text-cyan-200"
-                      >
-                        + {ing}
-                      </span>
+                      <li key={ing}>
+                        <Badge tone="brand">
+                          <Plus aria-hidden="true" className="h-3 w-3" />
+                          {ing}
+                        </Badge>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
               </div>
 
               {/* Interactive MCP Action Footer */}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2.5">
-                <span className="text-[11px] italic text-slate-400">
-                  {r.chefNote}
-                </span>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+                <p className="max-w-prose text-sm italic text-fg-muted">“{r.chefNote}”</p>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() =>
-                      onExecuteTool(
-                        'swap_ingredient_constraint',
-                        {
-                          dayIndex: meal.dayIndex,
-                          constraint: 'dairy-free',
-                          maxCalories: 520,
-                        },
-                        `Swap Day ${meal.dayIndex} for Dairy-Free (<520 kcal)`
-                      )
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50"
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                    Swap Dish (Dairy-Free &lt;520 kcal)
-                  </button>
-                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={isBusy}
+                  icon={<RefreshCw className="h-4 w-4" />}
+                  onClick={() =>
+                    onExecuteTool(
+                      'swap_ingredient_constraint',
+                      {
+                        dayIndex: meal.dayIndex,
+                        constraint: 'dairy-free',
+                        maxCalories: 520,
+                      },
+                      `Swap Day ${meal.dayIndex} for Dairy-Free (<520 kcal)`
+                    )
+                  }
+                >
+                  Swap · dairy-free &lt;520 kcal
+                </Button>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
+    </div>
+  );
+}
+
+function Macro({
+  icon,
+  label,
+  value,
+  tone = 'text-slate-100',
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <div className="rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-inset ring-white/[0.06]">
+      <dt className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-fg-muted">
+        {icon && <span aria-hidden="true">{icon}</span>}
+        {label}
+      </dt>
+      <dd className={cx('tabular mt-0.5 text-base font-bold', tone)}>{value}</dd>
     </div>
   );
 }

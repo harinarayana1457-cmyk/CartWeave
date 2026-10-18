@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Send, Sparkles, Play, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Send, Sparkles, CheckCircle2, ArrowRight, Hand } from 'lucide-react';
 import { AlexaVoiceOrb } from './AlexaVoiceOrb';
+import { cx, SectionLabel } from './ui';
 
 export interface ChatTurn {
   id: string;
@@ -53,6 +54,13 @@ export function ConversationPane({
   isBusy,
 }: ConversationPaneProps) {
   const [inputText, setInputText] = useState('');
+  const transcriptRef = useRef<HTMLDivElement>(null);
+
+  // Keep newest turn in view
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [turns.length, isBusy]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,104 +71,172 @@ export function ConversationPane({
   };
 
   return (
-    <aside className="w-full lg:w-[36%] border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-[#080D1A] p-4 flex flex-col justify-between gap-4">
-      <div className="space-y-3.5 flex-1 flex flex-col min-h-0">
-        {/* Alexa+ Voice Orb */}
-        <AlexaVoiceOrb
-          status={orbStatus}
-          onVoiceTranscript={(text) => {
-            onSendUtterance(text);
-          }}
-        />
+    <aside
+      aria-label="Alexa conversation"
+      className="w-full lg:w-[38%] xl:w-[36%] border-b lg:border-b-0 lg:border-r border-white/[0.06] bg-surface/40 p-4 sm:p-5 flex flex-col gap-4"
+    >
+      {/* Alexa+ Voice Orb */}
+      <AlexaVoiceOrb
+        status={orbStatus}
+        onVoiceTranscript={(text) => {
+          onSendUtterance(text);
+        }}
+      />
 
-        {/* 4 One-Click Judge Demo Scenario Chips */}
-        <div className="rounded-2xl border border-slate-800/90 bg-slate-900/60 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-              One-Click Judge Demo Scenarios
-            </span>
-            <span className="text-[10px] text-slate-400">
-              Stateful Multi-Turn MCP
-            </span>
-          </div>
+      {/* 4 One-Click Judge Demo Scenario Chips */}
+      <section aria-labelledby="demo-scenarios-label" className="space-y-2.5">
+        <SectionLabel
+          icon={<Sparkles className="h-3.5 w-3.5" />}
+          trailing={<span className="text-xs text-fg-muted">Stateful multi-turn MCP</span>}
+        >
+          <span id="demo-scenarios-label">Judge demo · tap in order</span>
+        </SectionLabel>
 
-          <div className="grid grid-cols-1 gap-1.5">
-            {JUDGE_DEMO_SCENARIOS.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                disabled={isBusy}
-                onClick={() => onSendUtterance(chip.utterance)}
-                className="group flex items-start gap-2 rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 text-left text-xs transition hover:border-cyan-500/50 hover:bg-cyan-950/25 disabled:opacity-50"
-              >
-                <Play className="h-3.5 w-3.5 text-cyan-400 shrink-0 mt-0.5 group-hover:scale-110 transition" />
-                <div>
-                  <div className="font-semibold text-cyan-300 text-[11px]">
-                    {chip.stepLabel}
-                  </div>
-                  <div className="text-slate-200 line-clamp-2">
-                    “{chip.utterance}”
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
+          {JUDGE_DEMO_SCENARIOS.map((chip, idx) => {
+            const [, ...labelParts] = chip.stepLabel.split('. ');
+            return (
+              <li key={chip.id}>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => onSendUtterance(chip.utterance)}
+                  className="group glass flex h-full w-full items-start gap-3 rounded-2xl p-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:border-cyan-400/40 hover:bg-cyan-400/[0.06] disabled:opacity-45"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-400/15 text-sm font-bold text-cyan-200 ring-1 ring-inset ring-cyan-400/30 transition-colors group-hover:bg-cyan-400 group-hover:text-slate-950"
+                  >
+                    {idx + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2 text-sm font-semibold text-white">
+                      {labelParts.join('. ') || chip.stepLabel}
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="h-4 w-4 shrink-0 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100"
+                      />
+                    </span>
+                    <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-fg-muted">
+                      “{chip.utterance}”
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
-        {/* Multi-turn Conversation Transcript */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[340px] lg:max-h-[390px]">
-          {turns.map((turn) => (
+      {/* Multi-turn Conversation Transcript */}
+      <div
+        ref={transcriptRef}
+        role="log"
+        aria-live="polite"
+        aria-label="Conversation transcript"
+        className="min-h-[220px] flex-1 space-y-3 overflow-y-auto pr-1 lg:max-h-[420px]"
+      >
+        {turns.map((turn) => {
+          const isUser = turn.role === 'user';
+          const isTouch = isUser && turn.text.startsWith('[Touch Action]');
+          const text = isTouch ? turn.text.replace('[Touch Action] ', '') : turn.text;
+          return (
             <div
               key={turn.id}
-              className={`rounded-2xl p-3 text-xs leading-relaxed ${
-                turn.role === 'user'
-                  ? 'ml-6 border border-indigo-500/30 bg-indigo-950/40 text-indigo-100'
-                  : 'mr-4 border border-cyan-500/25 bg-slate-900/90 text-slate-100'
-              }`}
+              className={cx('flex animate-fade-up gap-2.5', isUser ? 'justify-end' : 'justify-start')}
             >
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                <span className="font-semibold uppercase tracking-wider text-cyan-300">
-                  {turn.role === 'user' ? 'Household Member' : 'Alexa+ (CartWeave)'}
+              {!isUser && (
+                <span
+                  aria-hidden="true"
+                  className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-white"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
                 </span>
-                <span>{turn.timestamp}</span>
-              </div>
-              <p>{turn.text}</p>
-              {turn.toolsInvoked && turn.toolsInvoked.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5 pt-1.5 border-t border-slate-800/80">
-                  {turn.toolsInvoked.map((tool, i) => (
-                    <span
-                      key={`${tool}-${i}`}
-                      className="inline-flex items-center gap-1 rounded-md bg-cyan-500/15 px-2 py-0.5 font-mono text-[10px] text-cyan-300 border border-cyan-500/30"
-                    >
-                      <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" />
-                      {tool}
-                    </span>
-                  ))}
-                </div>
               )}
+              <div
+                className={cx(
+                  'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+                  isUser
+                    ? 'rounded-br-md bg-indigo-500/20 text-indigo-50 ring-1 ring-inset ring-indigo-400/30'
+                    : 'glass rounded-bl-md text-slate-100'
+                )}
+              >
+                <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                  <span className={cx('font-semibold', isUser ? 'text-indigo-200' : 'text-cyan-300')}>
+                    {isUser ? 'You' : 'Alexa+'}
+                  </span>
+                  <span className="tabular text-fg-muted">{turn.timestamp}</span>
+                </div>
+                {isTouch && (
+                  <span className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[11px] font-medium text-indigo-200">
+                    <Hand aria-hidden="true" className="h-3 w-3" />
+                    Touch action
+                  </span>
+                )}
+                <p>{text}</p>
+                {turn.toolsInvoked && turn.toolsInvoked.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-white/[0.06] pt-2.5">
+                    {turn.toolsInvoked.map((tool, i) => (
+                      <span
+                        key={`${tool}-${i}`}
+                        className="inline-flex items-center gap-1 rounded-md bg-cyan-400/10 px-2 py-0.5 font-mono text-[11px] text-cyan-200 ring-1 ring-inset ring-cyan-400/20"
+                      >
+                        <CheckCircle2 aria-hidden="true" className="h-3 w-3 text-emerald-400" />
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
+
+        {/* Typing indicator while tools are running */}
+        {isBusy && (
+          <div className="flex animate-fade-up items-center gap-2.5" aria-label="Alexa is working">
+            <span
+              aria-hidden="true"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-white"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            <div className="glass flex items-center gap-1.5 rounded-2xl rounded-bl-md px-4 py-3">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-typing-dot rounded-full bg-cyan-300"
+                  style={{ animationDelay: `${i * 160}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Utterance Input Box */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-1">
+      <form onSubmit={handleSubmit} className="glass flex items-center gap-2 rounded-2xl p-1.5">
+        <label htmlFor="alexa-utterance" className="sr-only">
+          Ask Alexa+
+        </label>
         <input
+          id="alexa-utterance"
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           disabled={isBusy}
-          placeholder="Ask Alexa+ about expiring pantry items, macros, or store prices..."
-          className="flex-1 rounded-xl border border-slate-700 bg-slate-900/90 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none"
+          autoComplete="off"
+          placeholder="Ask about expiring items, macros, or store prices…"
+          className="min-h-11 flex-1 rounded-xl bg-transparent px-3 text-sm text-white placeholder:text-fg-muted focus:outline-none focus-visible:outline-none disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={isBusy || !inputText.trim()}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-40"
+          aria-label="Send to Alexa"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-glow-accent transition-[background-color,opacity] duration-200 hover:bg-emerald-400 disabled:opacity-35 disabled:shadow-none"
         >
-          <Send className="h-3.5 w-3.5" />
-          <span>Send</span>
+          <Send aria-hidden="true" className="h-4 w-4" />
         </button>
       </form>
     </aside>

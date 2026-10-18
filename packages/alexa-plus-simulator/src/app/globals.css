@@ -2,32 +2,158 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+ * Semantic design tokens (RGB channels so Tailwind alpha modifiers work)
+ * Palette: "Dark tech + status green" — ui-ux-pro-max design system
+ * ------------------------------------------------------------------ */
 :root {
   color-scheme: dark;
+
+  --canvas: 5 8 18;          /* page backdrop behind the device */
+  --surface: 15 23 42;       /* #0F172A device screen */
+  --card: 27 35 54;          /* #1B2336 cards */
+  --muted: 39 47 66;         /* #272F42 muted fills */
+  --line: 71 85 105;         /* #475569 borders (use with alpha) */
+  --fg: 248 250 252;         /* #F8FAFC primary text */
+  --fg-muted: 148 163 184;   /* #94A3B8 secondary text (≥4.5:1 on surface) */
+  --brand: 34 211 238;       /* Alexa cyan */
+  --accent: 34 197 94;       /* #22C55E primary CTA */
+  --on-accent: 15 23 42;     /* #0F172A text on CTA */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-body {
-  background-color: #050811;
-  color: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  overflow-x: hidden;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--fg));
+    font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* Visible keyboard focus everywhere (never remove focus rings) */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+
+  button:not(:disabled),
+  [role='tab'],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-/* Custom sleek scrollbars for Echo Show 15 panes */
+@layer components {
+  /* Frosted glass surfaces */
+  .glass {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgb(var(--card) / 0.6);
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset, 0 8px 32px -12px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .glass-strong {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgb(var(--card) / 0.8);
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset, 0 8px 32px -12px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+  }
+
+  .glass-inset {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background-color: rgb(var(--surface) / 0.7);
+  }
+
+  /* Ambient aurora behind the Echo Show device */
+  .aurora {
+    background:
+      radial-gradient(60rem 40rem at 10% -10%, rgba(34, 211, 238, 0.14), transparent 60%),
+      radial-gradient(50rem 36rem at 100% 0%, rgba(99, 102, 241, 0.16), transparent 60%),
+      radial-gradient(40rem 30rem at 50% 110%, rgba(34, 197, 94, 0.08), transparent 60%),
+      rgb(var(--canvas));
+  }
+
+  /* Subtle grid texture inside the screen */
+  .screen-grid {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .skeleton {
+    border-radius: 0.75rem;
+    background-color: rgb(var(--muted) / 0.6);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Sleek scrollbars for Echo Show 15 panes */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 22, 38, 0.6);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.35);
+  background: rgba(148, 163, 184, 0.22);
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 202, 255, 0.6);
+  background: rgba(34, 211, 238, 0.5);
+  background-clip: padding-box;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

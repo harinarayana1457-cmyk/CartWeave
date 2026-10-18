@@ -1,12 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mic, MicOff, Sparkles } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
+import { cx } from './ui';
 
 interface AlexaVoiceOrbProps {
   status: 'idle' | 'listening' | 'thinking' | 'speaking';
   onVoiceTranscript: (transcript: string) => void;
 }
+
+const STATUS_COPY: Record<AlexaVoiceOrbProps['status'], { label: string; hint: string }> = {
+  idle: { label: 'Ready', hint: 'Say “Alexa, what’s expiring in my fridge?”' },
+  listening: { label: 'Listening…', hint: 'Go ahead, I’m listening.' },
+  thinking: { label: 'Invoking MCP tools…', hint: 'Chaining CartWeave tools on your session.' },
+  speaking: { label: 'Speaking…', hint: 'Reading your plan aloud.' },
+};
 
 export function AlexaVoiceOrb({
   status,
@@ -60,67 +68,83 @@ export function AlexaVoiceOrb({
   };
 
   const activeState = isListeningMic ? 'listening' : status;
+  const isActive = activeState !== 'idle';
+  const copy = STATUS_COPY[activeState];
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-[#0B1328] via-[#111B38] to-[#0B1328] p-3.5">
-      <div className="flex items-center gap-3.5">
-        {/* Animated Glowing Cyan/Indigo Alexa+ Orb */}
-        <div className="relative flex h-12 w-12 items-center justify-center">
-          <div
-            className={`absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-400 via-indigo-500 to-violet-500 blur-md transition-all duration-500 ${
-              activeState === 'idle'
-                ? 'opacity-45 scale-95'
-                : 'opacity-95 scale-110 animate-pulse'
-            }`}
-          />
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 shadow-inner ring-2 ring-white/30">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold tracking-tight text-white">
-              Alexa+ Kitchen Concierge
-            </span>
-            <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-300 border border-cyan-500/30">
-              {activeState === 'thinking'
-                ? 'Invoking MCP Tools...'
-                : activeState === 'speaking'
-                ? 'Speaking...'
-                : activeState === 'listening'
-                ? 'Listening...'
-                : 'Ready'}
-            </span>
-          </div>
-          <p className="text-xs text-slate-300 mt-0.5">
-            “Alexa, scan my expiring pantry items &amp; compare grocery carts”
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={handleMicToggle}
-        title="Speak to Alexa+ (Web Speech API)"
-        className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-          isListeningMic
-            ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 animate-pulse'
-            : 'border border-cyan-500/40 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/25'
-        }`}
-      >
-        {isListeningMic ? (
-          <>
-            <MicOff className="h-4 w-4" />
-            <span>Stop</span>
-          </>
-        ) : (
-          <>
-            <Mic className="h-4 w-4" />
-            <span>Push to Talk</span>
-          </>
+    <div className="glass-strong relative overflow-hidden rounded-3xl p-4">
+      <div
+        aria-hidden="true"
+        className={cx(
+          'pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full blur-3xl transition-opacity duration-700',
+          isActive ? 'bg-cyan-400/25 opacity-100' : 'bg-cyan-400/10 opacity-70'
         )}
-      </button>
+      />
+
+      <div className="relative flex items-center gap-4">
+        {/* Animated Alexa+ Orb */}
+        <div aria-hidden="true" className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+          <div
+            className={cx(
+              'absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#22d3ee,#6366f1,#a855f7,#22d3ee)] blur-[6px]',
+              activeState === 'thinking' ? 'animate-spin-fast opacity-100' : 'animate-spin-slow',
+              isActive ? 'opacity-100' : 'opacity-55'
+            )}
+          />
+          <div className="relative flex h-[52px] w-[52px] items-center justify-center rounded-full bg-surface ring-1 ring-white/20">
+            {/* Voice waveform bars */}
+            <div className="flex h-6 items-center gap-[3px]">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span
+                  key={i}
+                  className={cx(
+                    'w-[3px] origin-center rounded-full bg-gradient-to-b from-cyan-300 to-indigo-400',
+                    activeState === 'speaking' || activeState === 'listening'
+                      ? 'h-6 animate-wave'
+                      : activeState === 'thinking'
+                      ? 'h-3 animate-pulse'
+                      : 'h-2'
+                  )}
+                  style={{ animationDelay: `${i * 120}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-base font-bold tracking-tight text-white">Alexa+ Kitchen Concierge</span>
+          </div>
+          <p role="status" aria-live="polite" className="mt-0.5 text-sm font-semibold text-cyan-300">
+            {copy.label}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-fg-muted">{copy.hint}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleMicToggle}
+          aria-pressed={isListeningMic}
+          aria-label={isListeningMic ? 'Stop listening' : 'Push to talk to Alexa'}
+          title="Speak to Alexa+ (Web Speech API)"
+          className={cx(
+            'relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition-[background-color,box-shadow,transform] duration-200 ease-out-expo active:scale-95',
+            isListeningMic
+              ? 'bg-rose-500 text-white shadow-[0_0_0_6px_rgba(244,63,94,0.2)]'
+              : 'bg-gradient-to-br from-cyan-400 to-indigo-500 text-white shadow-glow hover:brightness-110'
+          )}
+        >
+          {isListeningMic && (
+            <span aria-hidden="true" className="absolute inset-0 animate-ping rounded-full bg-rose-500/40" />
+          )}
+          {isListeningMic ? (
+            <MicOff aria-hidden="true" className="relative h-6 w-6" />
+          ) : (
+            <Mic aria-hidden="true" className="relative h-6 w-6" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }

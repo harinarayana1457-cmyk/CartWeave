@@ -400,6 +400,7 @@ export default function CartWeaveEchoShowPage() {
       inspectorOpen={inspectorOpen}
       onToggleInspector={() => setInspectorOpen((prev) => !prev)}
       protocolLogCount={protocolLogs.length}
+      orbStatus={orbStatus}
     >
       <div className="flex flex-col lg:flex-row flex-1">
         <ConversationPane

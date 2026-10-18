@@ -7,12 +7,14 @@ import {
   Scale,
   PackageCheck,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import type { McpAppWidgetPayload } from '@/lib/mcpHttpClient';
 import { PantryExpiryCard } from './cards/PantryExpiryCard';
 import { MealPlanMacroCard } from './cards/MealPlanMacroCard';
 import { StoreArbitrageCard } from './cards/StoreArbitrageCard';
 import { OrderConfirmationCard } from './cards/OrderConfirmationCard';
+import { Button, cx, IconWell } from './ui';
 
 export type CanvasTab = 'PANTRY' | 'MEAL_PLAN' | 'ARBITRAGE' | 'ORDER';
 
@@ -56,78 +58,130 @@ export function McpAppsCanvas({
   const tabs: Array<{
     id: CanvasTab;
     label: string;
+    shortLabel: string;
     widgetBadge: string;
     icon: React.ReactNode;
     hasData: boolean;
   }> = [
     {
       id: 'PANTRY',
-      label: 'Pantry Inventory',
+      label: 'Pantry',
+      shortLabel: 'Pantry',
       widgetBadge: 'scan_pantry_inventory',
       icon: <Refrigerator className="h-4 w-4" />,
       hasData: Boolean(pantryWidget),
     },
     {
       id: 'MEAL_PLAN',
-      label: '3-Day Meal & Macro Plan',
+      label: 'Meal Plan',
+      shortLabel: 'Meals',
       widgetBadge: 'generate_meal_plan',
       icon: <UtensilsCrossed className="h-4 w-4" />,
       hasData: Boolean(mealPlanWidget),
     },
     {
       id: 'ARBITRAGE',
-      label: '3-Store Price Arbitrage',
+      label: 'Price Compare',
+      shortLabel: 'Compare',
       widgetBadge: 'compare_grocery_carts',
       icon: <Scale className="h-4 w-4" />,
       hasData: Boolean(arbitrageWidget),
     },
     {
       id: 'ORDER',
-      label: 'Order Receipt',
+      label: 'Order',
+      shortLabel: 'Order',
       widgetBadge: 'checkout_smart_basket',
       icon: <PackageCheck className="h-4 w-4" />,
       hasData: Boolean(orderWidget),
     },
   ];
 
-  return (
-    <main className="w-full lg:w-[64%] bg-[#0B1120] p-4 sm:p-5 flex flex-col justify-between gap-4">
-      <div className="space-y-4">
-        {/* Top Interactive MCP Apps View Navigation Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => onSelectTab(tab.id)}
-                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
-                    isActive
-                      ? 'bg-gradient-to-r from-cyan-500/25 to-indigo-500/25 text-white border border-cyan-400/50 shadow-sm'
-                      : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-slate-200 hover:bg-slate-900'
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                  {tab.hasData && (
-                    <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const idx = tabs.findIndex((t) => t.id === activeTab);
+    const next =
+      e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    onSelectTab(tabs[next].id);
+    document.getElementById(`canvas-tab-${tabs[next].id}`)?.focus();
+  };
 
-          <div className="hidden xl:flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/90 px-2.5 py-1 text-[11px] text-slate-400">
-            <Layers className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Alexa+ Multimodal MCP Apps Renderer</span>
-          </div>
+  return (
+    <main className="w-full lg:w-[62%] xl:w-[64%] p-4 sm:p-5 flex flex-col gap-4">
+      {/* Top Interactive MCP Apps View Navigation Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          role="tablist"
+          aria-label="MCP App widgets"
+          onKeyDown={handleTabKeyDown}
+          className="glass flex w-full items-center gap-1 overflow-x-auto rounded-2xl p-1 sm:w-auto"
+        >
+          {tabs.map((tab, idx) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`canvas-tab-${tab.id}`}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls="canvas-panel"
+                tabIndex={isActive ? 0 : -1}
+                title={tab.widgetBadge}
+                onClick={() => onSelectTab(tab.id)}
+                className={cx(
+                  'relative flex min-h-11 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3.5 text-sm font-semibold transition-[background-color,color,box-shadow] duration-200 sm:flex-none',
+                  isActive
+                    ? 'bg-white/[0.1] text-white shadow-glass ring-1 ring-inset ring-white/15'
+                    : 'text-fg-muted hover:bg-white/[0.04] hover:text-white'
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    'tabular flex h-5 w-5 items-center justify-center rounded-md text-[11px] font-bold',
+                    isActive ? 'bg-cyan-400 text-slate-950' : 'bg-white/[0.08] text-fg-muted'
+                  )}
+                >
+                  {idx + 1}
+                </span>
+                <span aria-hidden="true" className="hidden md:inline-flex">
+                  {tab.icon}
+                </span>
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.shortLabel}</span>
+                {tab.hasData && (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                    />
+                    <span className="sr-only">(has data)</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Active MCP App Widget Viewport */}
-        <div className="min-h-[470px]">
-          {activeTab === 'PANTRY' && pantryWidget && (
+        <div className="hidden xl:flex items-center gap-1.5 text-xs text-fg-muted">
+          <Layers aria-hidden="true" className="h-3.5 w-3.5 text-cyan-300" />
+          <span>Alexa+ Multimodal MCP Apps Renderer</span>
+        </div>
+      </div>
+
+      {/* Active MCP App Widget Viewport */}
+      <div
+        id="canvas-panel"
+        role="tabpanel"
+        aria-labelledby={`canvas-tab-${activeTab}`}
+        aria-busy={isBusy}
+        key={activeTab}
+        className="min-h-[470px] animate-fade-up"
+      >
+        {activeTab === 'PANTRY' &&
+          (pantryWidget ? (
             <PantryExpiryCard
               title={pantryWidget.title}
               subtitle={pantryWidget.subtitle}
@@ -136,124 +190,165 @@ export function McpAppsCanvas({
               onExecuteTool={onExecuteTool}
               isBusy={isBusy}
             />
-          )}
+          ) : (
+            <WidgetSkeleton />
+          ))}
 
-          {activeTab === 'MEAL_PLAN' &&
-            (mealPlanWidget ? (
-              <MealPlanMacroCard
-                title={mealPlanWidget.title}
-                subtitle={mealPlanWidget.subtitle}
-                mealPlan={mealPlanWidget.mealPlan}
-                swapHighlight={mealPlanWidget.swapHighlight}
-                onExecuteTool={onExecuteTool}
-                isBusy={isBusy}
-              />
-            ) : (
-              <EmptyWidgetPrompt
-                title="No Active 3-Day Meal Plan Yet"
-                description="Click below or tap Demo Scenario #1 to generate a 3-day high-protein vegetarian meal plan that rescues expiring pantry items."
-                buttonLabel="Run generate_meal_plan (3 Dinners < $38)"
-                onTrigger={() =>
-                  onExecuteTool(
-                    'generate_meal_plan',
-                    {
-                      days: 3,
-                      maxBudgetUsd: 38,
-                      minProteinGramsPerMeal: 35,
-                      dietaryTags: ['vegetarian'],
-                      prioritizeExpiring: true,
-                    },
-                    'Generate 3-Day High-Protein Meal Plan'
-                  )
-                }
-                isBusy={isBusy}
-              />
-            ))}
+        {activeTab === 'MEAL_PLAN' &&
+          (mealPlanWidget ? (
+            <MealPlanMacroCard
+              title={mealPlanWidget.title}
+              subtitle={mealPlanWidget.subtitle}
+              mealPlan={mealPlanWidget.mealPlan}
+              swapHighlight={mealPlanWidget.swapHighlight}
+              onExecuteTool={onExecuteTool}
+              isBusy={isBusy}
+            />
+          ) : (
+            <EmptyWidgetPrompt
+              icon={<UtensilsCrossed className="h-6 w-6" />}
+              title="No Active 3-Day Meal Plan Yet"
+              description="Click below or tap Demo Scenario #1 to generate a 3-day high-protein vegetarian meal plan that rescues expiring pantry items."
+              buttonLabel="Generate 3 dinners under $38"
+              toolName="generate_meal_plan"
+              onTrigger={() =>
+                onExecuteTool(
+                  'generate_meal_plan',
+                  {
+                    days: 3,
+                    maxBudgetUsd: 38,
+                    minProteinGramsPerMeal: 35,
+                    dietaryTags: ['vegetarian'],
+                    prioritizeExpiring: true,
+                  },
+                  'Generate 3-Day High-Protein Meal Plan'
+                )
+              }
+              isBusy={isBusy}
+            />
+          ))}
 
-          {activeTab === 'ARBITRAGE' &&
-            (arbitrageWidget ? (
-              <StoreArbitrageCard
-                title={arbitrageWidget.title}
-                subtitle={arbitrageWidget.subtitle}
-                comparison={arbitrageWidget.comparison}
-                onExecuteTool={onExecuteTool}
-                isBusy={isBusy}
-              />
-            ) : (
-              <EmptyWidgetPrompt
-                title="3-Retailer Grocery Arbitrage Not Run Yet"
-                description="Compare missing meal-plan ingredients across Amazon Fresh, Whole Foods Market, and Local Co-op with live Prime savings."
-                buttonLabel="Run compare_grocery_carts Now"
-                onTrigger={() =>
-                  onExecuteTool(
-                    'compare_grocery_carts',
-                    { preferredDeliveryWindow: '6:00 PM – 7:00 PM' },
-                    'Compare Amazon Fresh vs. Whole Foods vs. Local Co-op'
-                  )
-                }
-                isBusy={isBusy}
-              />
-            ))}
+        {activeTab === 'ARBITRAGE' &&
+          (arbitrageWidget ? (
+            <StoreArbitrageCard
+              title={arbitrageWidget.title}
+              subtitle={arbitrageWidget.subtitle}
+              comparison={arbitrageWidget.comparison}
+              onExecuteTool={onExecuteTool}
+              isBusy={isBusy}
+            />
+          ) : (
+            <EmptyWidgetPrompt
+              icon={<Scale className="h-6 w-6" />}
+              title="3-Retailer Grocery Arbitrage Not Run Yet"
+              description="Compare missing meal-plan ingredients across Amazon Fresh, Whole Foods Market, and Local Co-op with live Prime savings."
+              buttonLabel="Compare 3 stores now"
+              toolName="compare_grocery_carts"
+              onTrigger={() =>
+                onExecuteTool(
+                  'compare_grocery_carts',
+                  { preferredDeliveryWindow: '6:00 PM – 7:00 PM' },
+                  'Compare Amazon Fresh vs. Whole Foods vs. Local Co-op'
+                )
+              }
+              isBusy={isBusy}
+            />
+          ))}
 
-          {activeTab === 'ORDER' &&
-            (orderWidget ? (
-              <OrderConfirmationCard
-                title={orderWidget.title}
-                subtitle={orderWidget.subtitle}
-                order={orderWidget.order}
-                onExecuteTool={onExecuteTool}
-                isBusy={isBusy}
-              />
-            ) : (
-              <EmptyWidgetPrompt
-                title="No Basket Checked Out Yet"
-                description="Complete a one-tap smart checkout to generate an order tracking code, calculate Prime savings, and deduct rescued expiring pantry items."
-                buttonLabel="Run checkout_smart_basket (Amazon Fresh 6–7 PM)"
-                onTrigger={() =>
-                  onExecuteTool(
-                    'checkout_smart_basket',
-                    {
-                      storeId: 'amazon-fresh',
-                      deliverySlot: '6:00 PM – 7:00 PM',
-                      applyPrimeSavings: true,
-                    },
-                    'One-Tap Checkout Amazon Fresh Basket'
-                  )
-                }
-                isBusy={isBusy}
-              />
-            ))}
-        </div>
+        {activeTab === 'ORDER' &&
+          (orderWidget ? (
+            <OrderConfirmationCard
+              title={orderWidget.title}
+              subtitle={orderWidget.subtitle}
+              order={orderWidget.order}
+              onExecuteTool={onExecuteTool}
+              isBusy={isBusy}
+            />
+          ) : (
+            <EmptyWidgetPrompt
+              icon={<PackageCheck className="h-6 w-6" />}
+              title="No Basket Checked Out Yet"
+              description="Complete a one-tap smart checkout to generate an order tracking code, calculate Prime savings, and deduct rescued expiring pantry items."
+              buttonLabel="Checkout Amazon Fresh (6–7 PM)"
+              toolName="checkout_smart_basket"
+              onTrigger={() =>
+                onExecuteTool(
+                  'checkout_smart_basket',
+                  {
+                    storeId: 'amazon-fresh',
+                    deliverySlot: '6:00 PM – 7:00 PM',
+                    applyPrimeSavings: true,
+                  },
+                  'One-Tap Checkout Amazon Fresh Basket'
+                )
+              }
+              isBusy={isBusy}
+            />
+          ))}
       </div>
     </main>
   );
 }
 
 function EmptyWidgetPrompt({
+  icon,
   title,
   description,
   buttonLabel,
+  toolName,
   onTrigger,
   isBusy,
 }: {
+  icon: React.ReactNode;
   title: string;
   description: string;
   buttonLabel: string;
+  toolName: string;
   onTrigger: () => void;
   isBusy: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-12 text-center">
-      <h4 className="text-base font-semibold text-white">{title}</h4>
-      <p className="mt-1.5 max-w-md text-xs text-slate-400">{description}</p>
-      <button
-        type="button"
-        disabled={isBusy}
+    <div className="glass relative flex min-h-[470px] flex-col items-center justify-center overflow-hidden rounded-3xl border-dashed p-10 text-center">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/3 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/10 blur-3xl"
+      />
+      <IconWell tone="brand" size="lg">
+        {icon}
+      </IconWell>
+      <h3 className="relative mt-4 text-lg font-bold tracking-tight text-white">{title}</h3>
+      <p className="relative mt-2 max-w-md text-sm leading-relaxed text-fg-muted">{description}</p>
+      <Button
+        variant="primary"
+        className="relative mt-6"
+        loading={isBusy}
         onClick={onTrigger}
-        className="mt-4 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50"
+        icon={<Sparkles className="h-4 w-4" />}
       >
         {buttonLabel}
-      </button>
+      </Button>
+      <code className="relative mt-3 font-mono text-xs text-fg-muted">tools/call · {toolName}</code>
+    </div>
+  );
+}
+
+function WidgetSkeleton() {
+  return (
+    <div className="space-y-4" aria-label="Loading pantry inventory">
+      <div className="skeleton h-[104px] rounded-3xl" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton h-[92px] rounded-2xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton h-[120px] rounded-2xl" />
+        ))}
+      </div>
+      <p className="text-center text-sm text-fg-muted">
+        Connecting to the CartWeave MCP server on <code className="font-mono text-cyan-300">:3001</code>…
+      </p>
     </div>
   );
 }

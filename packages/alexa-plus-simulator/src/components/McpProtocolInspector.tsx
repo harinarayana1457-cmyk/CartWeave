@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import type { McpProtocolLogEntry } from '@/lib/mcpHttpClient';
+import { Badge, Button, cx } from './ui';
 
 export interface ComplianceCheckResult {
   step: string;
@@ -49,79 +50,87 @@ export function McpProtocolInspector({
   };
 
   return (
-    <section className="border-t border-cyan-500/35 bg-[#060A14] px-4 py-4 text-xs">
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-sm font-bold text-cyan-300">
-            <Terminal className="h-4 w-4 text-cyan-400" />
-            <span>Judge MCP 2025-11-25 Streamable HTTP Protocol Inspector</span>
+    <section
+      id="mcp-protocol-inspector"
+      aria-label="MCP 2025-11-25 Protocol Inspector"
+      className="border-t border-white/[0.08] bg-canvas/80 px-4 py-4 text-xs backdrop-blur-xl sm:px-5"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 text-sm font-bold text-white">
+            <Terminal aria-hidden="true" className="h-4 w-4 text-cyan-300" />
+            <span>MCP 2025-11-25 Streamable HTTP Inspector</span>
           </div>
 
-          <span className="rounded-lg border border-cyan-500/30 bg-cyan-950/30 px-2.5 py-1 font-mono text-[11px] text-cyan-200">
-            Mcp-Session-Id: {sessionId || 'Not initialized'}
-          </span>
+          <Badge tone="brand" mono>
+            Session: {sessionId ? `${sessionId.slice(0, 12)}…` : 'Not initialized'}
+          </Badge>
 
-          <span className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300">
-            Endpoint: <code className="text-cyan-300">POST /mcp</code>
-          </span>
+          <Badge mono>POST /mcp</Badge>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={isRunningSelfTest}
+          <Button
+            size="sm"
+            variant="primary"
+            loading={isRunningSelfTest}
+            icon={<Play className="h-3.5 w-3.5" />}
             onClick={handleSelfTest}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-500/20 hover:opacity-95 disabled:opacity-50"
           >
-            <Play className="h-3.5 w-3.5" />
             {isRunningSelfTest
-              ? 'Running 5-Tool Compliance Check...'
-              : 'Run MCP 2025-11-25 Compliance Check'}
-          </button>
+              ? 'Running 5-tool compliance check…'
+              : 'Run MCP 2025-11-25 compliance check'}
+          </Button>
 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:text-white"
+            aria-label="Close protocol inspector"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04] text-fg-muted ring-1 ring-inset ring-white/10 transition-colors hover:bg-white/[0.08] hover:text-white"
           >
-            <X className="h-4 w-4" />
+            <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {/* Compliance Self-Test Badges */}
       {complianceResults && (
-        <div className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 font-semibold text-emerald-300">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+        <div
+          role="region"
+          aria-label="MCP compliance results"
+          className="mt-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.07] p-3.5"
+        >
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200">
+              <ShieldCheck aria-hidden="true" className="h-4 w-4 text-emerald-300" />
               <span>
-                MCP 2025-11-25 Automated Self-Test: {complianceResults.filter((r) => r.passed).length}/
-                {complianceResults.length} Passed
+                Automated self-test:{' '}
+                {complianceResults.filter((r) => r.passed).length}/
+                {complianceResults.length} passed
               </span>
             </div>
-            <span className="text-[11px] text-emerald-300 font-mono">
-              protocolVersion === &quot;2025-11-25&quot; • VERIFIED
-            </span>
+            <Badge tone="success" mono>
+              protocolVersion === &quot;2025-11-25&quot; · VERIFIED
+            </Badge>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {complianceResults.map((item) => (
               <div
                 key={item.step}
-                className="rounded-lg border border-emerald-500/30 bg-slate-950/75 p-2 flex flex-col justify-between"
+                className="flex flex-col justify-between rounded-xl bg-surface/90 p-2.5 ring-1 ring-inset ring-emerald-400/25"
               >
                 <div className="flex items-center justify-between gap-1">
-                  <span className="font-mono font-semibold text-emerald-300 text-[11px]">
+                  <span className="truncate font-mono text-[11px] font-semibold text-emerald-200">
                     {item.step}
                   </span>
-                  <span className="inline-flex items-center gap-0.5 rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">
-                    <CheckCircle2 className="h-3 w-3" /> PASS
+                  <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-emerald-400/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200">
+                    <CheckCircle2 aria-hidden="true" className="h-3 w-3" /> PASS
                   </span>
                 </div>
-                <div className="mt-1 text-[10px] text-slate-300 truncate">
+                <div className="mt-1 truncate text-xs text-slate-200">
                   {item.detail}
                 </div>
-                <div className="mt-1 text-[10px] font-mono text-slate-400">
+                <div className="tabular mt-1 font-mono text-[11px] text-fg-muted">
                   {item.latencyMs} ms
                 </div>
               </div>
@@ -131,64 +140,71 @@ export function McpProtocolInspector({
       )}
 
       {/* Chronological JSON-RPC 2.0 Frames List */}
-      <div className="mt-3 max-h-64 overflow-y-auto space-y-1.5 pr-1">
+      <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto pr-1">
         {logs.map((entry) => {
           const isExpanded = expandedId === entry.id;
           return (
             <div
               key={entry.id}
-              className="rounded-xl border border-slate-800/90 bg-slate-900/75 overflow-hidden"
+              className="overflow-hidden rounded-xl bg-surface/80 ring-1 ring-inset ring-white/[0.07]"
             >
               <button
                 type="button"
-                onClick={() =>
-                  setExpandedId(isExpanded ? null : entry.id)
-                }
-                className="w-full flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-left hover:bg-slate-800/60"
+                aria-expanded={isExpanded}
+                onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                className="flex min-h-10 w-full flex-wrap items-center justify-between gap-2 px-3.5 py-2 text-left transition-colors hover:bg-white/[0.04]"
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   {isExpanded ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-cyan-400" />
+                    <ChevronDown aria-hidden="true" className="h-4 w-4 text-cyan-300" />
                   ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                    <ChevronRight aria-hidden="true" className="h-4 w-4 text-fg-muted" />
                   )}
-                  <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
+                  <Badge
+                    tone={entry.status < 400 ? 'success' : 'danger'}
+                    mono
+                  >
                     HTTP {entry.status}
-                  </span>
-                  <span className="font-mono font-semibold text-cyan-300">
+                  </Badge>
+                  <span className="font-mono text-xs font-semibold text-cyan-200">
                     {entry.method}
                   </span>
                   {entry.toolName && (
-                    <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 font-mono text-[11px] text-indigo-200 border border-indigo-500/30">
+                    <Badge tone="violet" mono>
                       {entry.toolName}
-                    </span>
+                    </Badge>
                   )}
-                  <span className="text-[11px] text-slate-400">
-                    ({entry.direction})
-                  </span>
+                  <span className="text-xs text-fg-muted">({entry.direction})</span>
                 </div>
 
-                <div className="flex items-center gap-3 font-mono text-[11px] text-slate-400">
-                  <span className="text-emerald-400">{entry.latencyMs} ms</span>
+                <div className="tabular flex items-center gap-3 font-mono text-xs text-fg-muted">
+                  <span
+                    className={cx(
+                      'font-semibold',
+                      entry.latencyMs < 50 ? 'text-emerald-300' : 'text-cyan-300'
+                    )}
+                  >
+                    {entry.latencyMs} ms
+                  </span>
                   <span>{entry.timestamp}</span>
                 </div>
               </button>
 
               {isExpanded && (
-                <div className="grid grid-cols-1 gap-2 border-t border-slate-800 bg-slate-950 p-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 border-t border-white/[0.06] bg-canvas/80 p-3.5 md:grid-cols-2">
                   <div>
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-cyan-300">
                       JSON-RPC 2.0 Request Frame
                     </div>
-                    <pre className="max-h-48 overflow-auto rounded-lg bg-slate-900 p-2 font-mono text-[10px] text-slate-200">
+                    <pre className="max-h-48 overflow-auto rounded-xl bg-surface p-3 font-mono text-[11px] leading-relaxed text-slate-200 ring-1 ring-inset ring-white/[0.06]">
                       {JSON.stringify(entry.requestPayload, null, 2)}
                     </pre>
                   </div>
                   <div>
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
                       JSON-RPC 2.0 Response Frame
                     </div>
-                    <pre className="max-h-48 overflow-auto rounded-lg bg-slate-900 p-2 font-mono text-[10px] text-slate-200">
+                    <pre className="max-h-48 overflow-auto rounded-xl bg-surface p-3 font-mono text-[11px] leading-relaxed text-slate-200 ring-1 ring-inset ring-white/[0.06]">
                       {JSON.stringify(entry.responsePayload, null, 2)}
                     </pre>
                   </div>
