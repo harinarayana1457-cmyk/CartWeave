@@ -21,7 +21,6 @@ A self-hosted **Model Context Protocol (MCP `2025-11-25` Streamable HTTP)** serv
   <a href="#-system-architecture"><b>Architecture</b></a> •
   <a href="#-the-5-stateful-mcp-tools"><b>MCP Tools</b></a> •
   <a href="#-quick-start"><b>Quick Start</b></a> •
-  <a href="#-3-minute-judge-demo-script"><b>Judge Demo</b></a> •
   <a href="#-project-structure"><b>Structure</b></a> •
   <a href="#-connect--author"><b>Connect</b></a>
 </p>
@@ -183,45 +182,6 @@ npm run dev
 * **Echo Show 15 Alexa+ Simulator**: [`http://localhost:3000`](http://localhost:3000)
 * **MCP 2025-11-25 Streamable HTTP Endpoint**: [`http://localhost:3001/mcp`](http://localhost:3001/mcp)
 * **Health & Diagnostics**: [`http://localhost:3001/health`](http://localhost:3001/health)
-
----
-
-## ⏱️ 3-Minute Judge Demo Script
-
-Follow this step-by-step walkthrough in the Echo Show 15 simulator:
-
-```
-+---------------------------------------------------------------------------------------------+
-|                          Echo Show 15 Multimodal Simulator                                  |
-+-------------------------------------------------------------+-------------------------------+
-|  Alexa+ Voice Orb (STT / TTS Active)                        |  MCP Apps UI Canvas           |
-|                                                             |                               |
-|  [ Chip 1: Scan & Plan ]     [ Chip 2: Price Arbitrage ]    |  [ Pantry Inventory Grid ]    |
-|  [ Chip 3: Swap Constraint ] [ Chip 4: Checkout Basket ]    |  [ 3-Day Meal & Macro Plan ]  |
-|                                                             |  [ 3-Store Arbitrage Table ]  |
-|  Conversation Timeline:                                     |  [ Order Confirmation Card ]  |
-|  > "Scan pantry and plan 3 high-protein dinners under $38"  |                               |
-|  < "I found spinach & yogurt expiring. Planned 3 meals..."  |  Bottom Drawer:               |
-|                                                             |  [ Protocol Inspector (JSON) ]|
-+-------------------------------------------------------------+-------------------------------+
-```
-
-1. **0:00 – 0:30 | MCP 2025-11-25 Handshake & Session Verification**:
-   - Open `http://localhost:3000`. Observe the top status bar displaying `MCP 2025-11-25 Streamable HTTP • Connected` along with the active `Mcp-Session-Id` UUID badge.
-   - Click **"Protocol Inspector"** in the top-right to inspect real `initialize`, `tools/list`, and `resources/list` JSON-RPC 2.0 frames captured during boot.
-2. **0:30 – 1:15 | Pantry Rescue & High-Protein Meal Planning**:
-   - Click **Judge Demo Chip #1**: *"Scan my pantry for expiring items and plan 3 high-protein vegetarian dinners under $38."*
-   - CartWeave chains `scan_pantry_inventory` (flagging Baby Spinach in 18h, Greek Yogurt in 24h, Paneer in 36h) and `generate_meal_plan` (3 dinners averaging **39g protein/meal** at **$31.40 total**).
-3. **1:15 – 2:00 | 3-Retailer Grocery Price & Substitution Arbitrage**:
-   - Click **Judge Demo Chip #2**: *"Compare Amazon Fresh vs. Whole Foods for the missing ingredients."*
-   - Inspect the **Store Arbitrage** table contrasting **Amazon Fresh**, **Whole Foods Market**, and **Local Co-op** with Prime discounts and delivery time estimates.
-4. **2:00 – 2:35 | Stateful Mid-Conversation Constraint Mutation**:
-   - Click **Judge Demo Chip #3**: *"Swap Day 2 for a dairy-free dish under 520 calories and recalculate."* (or click **"Swap Dish"** on the Day 2 card).
-   - `swap_ingredient_constraint` mutates the active session in place, replacing Day 2 with a **Crispy Tofu & Edamame Sesame Quinoa Bowl (480 kcal, 36g protein, Dairy-Free)** and updating store totals automatically.
-5. **2:35 – 3:00 | One-Tap Smart Basket Checkout & Compliance Self-Test**:
-   - Click **Judge Demo Chip #4**: *"Checkout the Amazon Fresh basket for the 6:00 PM – 7:00 PM delivery window."*
-   - View the **Order Confirmation Card** showing the delivery tracking code and **$18.45 in avoided food waste**.
-   - Open the **Protocol Inspector** and click **"Run MCP 2025-11-25 Compliance Check"** to execute all 5 tools sequentially with green pass verification badges.
 
 ---
 
