@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
-  Wifi,
   CameraOff,
   Cpu,
   Terminal,
@@ -42,20 +41,6 @@ export function EchoShowFrame({
   orbStatus = 'idle',
   children,
 }: EchoShowFrameProps) {
-  const [clockText, setClockText] = useState('');
-  const [dateText, setDateText] = useState('');
-
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      setClockText(now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
-      setDateText(now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }));
-    };
-    updateClock();
-    const timer = setInterval(updateClock, 15000);
-    return () => clearInterval(timer);
-  }, []);
-
   const isActive = orbStatus !== 'idle';
 
   return (
@@ -129,7 +114,7 @@ export function EchoShowFrame({
               )}
             </div>
 
-            {/* Right: Orchestrator Segmented Control, Voice, Inspector & Clock */}
+            {/* Right: Orchestrator Segmented Control, Voice & Inspector */}
             <div className="flex flex-wrap items-center gap-2">
               <div
                 role="group"
@@ -215,16 +200,6 @@ export function EchoShowFrame({
                   {protocolLogCount}
                 </span>
               </button>
-
-              <div className="ml-1 hidden sm:flex flex-col items-end leading-tight">
-                <span className="tabular text-lg font-bold tracking-tight text-white" suppressHydrationWarning>
-                  {clockText}
-                </span>
-                <span className="flex items-center gap-1 text-[11px] text-fg-muted" suppressHydrationWarning>
-                  <Wifi aria-hidden="true" className="h-3 w-3 text-cyan-300" />
-                  {dateText}
-                </span>
-              </div>
             </div>
           </header>
 
